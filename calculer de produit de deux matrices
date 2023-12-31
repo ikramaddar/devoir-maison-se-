@@ -1,0 +1,52 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define MAX_SIZE 10
+
+int n1 = 3, m1 = 3; // Taille de la matrice B
+int n2 = 3, m2 = 3; // Taille de la matrice C
+int N = 3; // Taille du tampon T
+int A[MAX_SIZE][MAX_SIZE]; // Matrice résultante A
+int B[MAX_SIZE][MAX_SIZE]; // Matrice B
+int C[MAX_SIZE][MAX_SIZE]; // Matrice C
+int T[MAX_SIZE]; // Tampon T
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Verrou pour synchroniser l'accès aux données
+
+// Fonction producteur
+void *producteur(void *arg) {
+    int row = *((int *)arg);
+
+    // Calcul de la ligne de la matrice résultante A
+    for (int col = 0; col < m2; col++) {
+        int sum = 0;
+        for (int i = 0; i < m1; i++) {
+            sum += B[row][i] * C[i][col];
+        }
+
+        // Placement du résultat dans le tampon T
+        pthread_mutex_lock(&mutex);
+        T[col] = sum;
+        pthread_mutex_unlock(&mutex);
+    }
+
+    pthread_exit(NULL);
+}
+
+// Fonction consommateur
+void *consommateur(void *arg) {
+    int col = *((int *)arg);
+
+    // Placement du résultat dans la matrice résultante A
+    pthread_mutex_lock(&mutex);
+    for (int row = 0; row < n1; row++) {
+        A[row][col] = T[col];
+    }
+    pthread_mutex_unlock(&mutex);
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t threads[MAX_SIZE];
+    int row_indices[MAX_SIZE], col_indices
